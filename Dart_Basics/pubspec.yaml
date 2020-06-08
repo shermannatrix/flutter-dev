@@ -1,0 +1,6 @@
+name: Dart_Basics
+environment:
+    sdk: ">= 2.8.4"
+
+dependencies:
+    meta: ^1.1.8
