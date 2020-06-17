@@ -63,32 +63,20 @@ class _MyHomePageState
 		controller = AnimationController(
 				duration: const Duration(seconds: 2),
 				vsync: this);
-		animation = Tween<double>(begin: 0, end: 300).animate(controller)
-			..addStatusListener((state) { print('$state'); });
+		animation = CurvedAnimation(parent: controller, curve: Curves.easeIn)
+			..addStatusListener((status) {
+				if (status == AnimationStatus.completed) {
+					controller.reverse();
+				} else if (status == AnimationStatus.dismissed) {
+					controller.forward();
+				}
+			})
+			..addStatusListener((state) => print('$state') );
 		controller.forward();
 	}
 	
 	@override
-	Widget build(BuildContext context) {
-		// This method is rerun every time setState is called, for instance as done
-		// by the _incrementCounter method above.
-		//
-		// The Flutter framework has been optimized to make rerunning build methods
-		// fast, so that you can just rebuild anything that needs updating rather
-		// than having to individually change instances of widgets.
-		return Scaffold(
-			appBar: AppBar(
-				// Here we take the value from the MyHomePage object that was created by
-				// the App.build method, and use it to set our appbar title.
-				title: Text(widget.title),
-			),
-			body: Center(
-				// Center is a layout widget. It takes a single child and positions it
-				// in the middle of the parent.
-				child: AnimatedLogo(animation: animation),
-			), // This trailing comma makes auto-formatting nicer for build methods.
-		);
-	}
+	Widget build(BuildContext context) => AnimatedLogo(animation: animation);
 	
 	@override
 	void dispose() {
@@ -98,18 +86,53 @@ class _MyHomePageState
 }
 
 class AnimatedLogo extends AnimatedWidget {
+	// Make the Tweens static because they don't change.
+	static final _opacityTween = Tween<double>(begin: 0.1, end: 1.0);
+	static final _sizeTween = Tween<double>(begin: 0, end: 300);
+	
 	AnimatedLogo({Key key, Animation<double> animation})
 			: super(key: key, listenable: animation);
 	
 	Widget build(BuildContext context) {
 		final animation = listenable as Animation<double>;
 		return Center(
-			child: Container(
-				margin: EdgeInsets.symmetric(vertical: 10),
-				height: animation.value,
-				width: animation.value,
-				child: FlutterLogo(),
+			child: Opacity(
+				opacity: _opacityTween.evaluate(animation),
+				child: Container(
+					margin: EdgeInsets.symmetric(vertical: 10),
+					height: _sizeTween.evaluate(animation),
+					width: _sizeTween.evaluate(animation),
+					child: FlutterLogo(),
+				),
 			),
+			
 		);
 	}
+}
+
+class GrowTransition extends StatelessWidget {
+	GrowTransition({this.child, this.animation});
+	
+	final Widget child;
+	final Animation<double> animation;
+	
+	Widget build(BuildContext context) => Center (
+		child: AnimatedBuilder(
+			animation: animation,
+			builder: (context, child) => Container(
+				height: animation.value,
+				width: animation.value,
+				child: child,
+			),
+			child: child,
+		),
+	);
+}
+
+class LogoWidget extends StatelessWidget {
+	// Leave out the height and width so it fills the animating parent.
+	Widget build(BuildContext context) => Container(
+		margin: EdgeInsets.symmetric(vertical: 10),
+		child: FlutterLogo(),
+	);
 }
